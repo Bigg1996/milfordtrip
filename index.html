@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Milford Sound Cruise Planner</title>
+    <!-- Try moving the Tailwind script first, though it's usually not strictly necessary for this kind of issue. -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -499,4 +500,52 @@
                     } else {
                         filters[filter] = value;
                         const siblings = e.target.parentElement.querySelectorAll('button');
-                        siblings.forEach(btn => b
+                        siblings.forEach(btn => btn.classList.remove('active'));
+                        e.target.classList.add('active');
+                    }
+                    filterAndRender();
+                }
+            });
+
+            document.getElementById('clear-filters').addEventListener('click', () => {
+                for (const key in filters) {
+                    delete filters[key];
+                }
+                document.querySelectorAll('.filter-btn.active').forEach(btn => btn.classList.remove('active'));
+                filterAndRender();
+            });
+            
+            document.getElementById('chart-metric-selector').addEventListener('change', (e) => {
+                 const filteredData = cruiseData.filter(cruise => {
+                    return Object.entries(filters).every(([key, value]) => {
+                        return cruise.tags[key] === value;
+                    });
+                });
+                updateChart(filteredData.length > 0 ? filteredData : cruiseData, e.target.value);
+            });
+
+            grid.addEventListener('click', (e) => {
+                const card = e.target.closest('.card');
+                if(card) {
+                    const detailsId = `details-${card.dataset.id}`;
+                    const detailsElement = document.getElementById(detailsId);
+                    detailsElement.classList.toggle('open');
+
+                    // If a "Suggest Activities" button is clicked
+                    if (e.target.dataset.action === 'suggest-activities') {
+                        const cruiseId = e.target.dataset.cruiseId;
+                        const selectedCruise = cruiseData.find(c => c.id === cruiseId);
+                        if (selectedCruise) {
+                            const suggestionsDiv = document.getElementById(`suggestions-${cruiseId}`);
+                            generatePostCruiseSuggestions(selectedCruise.name, selectedCruise.tags.vibe, suggestionsDiv);
+                        }
+                    }
+                }
+            });
+
+            renderCards(cruiseData);
+            initializeChart(cruiseData, 'price');
+        });
+    </script>
+</body>
+</html>
