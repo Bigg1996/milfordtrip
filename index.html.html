@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Milford Sound Cruise Planner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Earthy Neutrals -->
+    <!-- Application Structure Plan: The SPA is structured as a guided journey to facilitate decision-making. It starts with a hero section for inspiration, moves to critical "Day Plan" logistics, then to an interactive "Filter & Compare" section where users can set preferences (Vibe, Priority, Budget) to dynamically filter cruise cards. A visual chart aids comparison. It concludes with an actionable "Final Checklist." This task-oriented flow was chosen to simplify the complex information in the report, moving from planning to decision and final preparation, which is more user-friendly than the report's linear structure. -->
+    <!-- Visualization & Content Choices: Report Info: Operator details -> Goal: Compare -> Viz: Interactive Cards + Bar Chart -> Interaction: Click-to-expand details, filter buttons update cards/chart -> Justification: Cards offer digestible summaries, while the dynamic chart provides scannable quantitative comparison (Price, Duration). Report Info: Timings -> Goal: Inform -> Viz: HTML/CSS Timeline -> Interaction: Static Visual -> Justification: A visual timeline is more engaging for planning than text. All interactions are designed to reduce complexity and guide the user to a confident choice. Library: Chart.js for the canvas-based chart. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F8F5F2;
+            color: #3D352F;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 40vh;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .nav-link {
+            transition: color 0.3s ease;
+        }
+        .nav-link:hover {
+            color: #A47551;
+        }
+        .filter-btn {
+            transition: all 0.3s ease;
+        }
+        .filter-btn.active {
+            background-color: #A47551;
+            color: #FFFFFF;
+            transform: scale(1.05);
+        }
+        .card {
+            transition: all 0.3s ease;
+            will-change: transform, box-shadow;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .details-section {
+            transition: max-height 0.7s ease-in-out, opacity 0.5s ease-in-out;
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+        }
+        .details-section.open {
+            max-height: 2000px;
+            opacity: 1;
+        }
+        .loading-spinner {
+            border: 4px solid rgba(0, 0, 0, .1);
+            border-left-color: #A47551;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="bg-[#EAE4DD] sticky top-0 z-50 shadow-md">
+        <nav class="container mx-auto px-6 py-3 flex justify-between items-center">
+            <div class="text-xl font-bold text-[#3D352F]">Milford Sound Planner</div>
+            <div class="hidden md:flex space-x-8">
+                <a href="#plan" class="nav-link">Day Plan</a>
+                <a href="#compare" class="nav-link">Compare Cruises</a>
+                <a href="#checklist" class="nav-link">Checklist</a>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section id="hero" class="relative text-white text-center py-20 md:py-32 bg-cover bg-center" style="background-image: url('https://placehold.co/1600x900/3D352F/F8F5F2?text=Milford+Sound');">
+            <div class="absolute inset-0 bg-black opacity-50"></div>
+            <div class="relative container mx-auto px-6">
+                <h1 class="text-4xl md:text-6xl font-bold mb-4">Your Perfect New Year's Cruise</h1>
+                <p class="text-lg md:text-xl max-w-3xl mx-auto">An interactive guide to help your group choose the ideal Milford Sound experience for a memorable start to the year.</p>
+            </div>
+        </section>
+
+        <section id="plan" class="py-16 md:py-24 bg-white">
+            <div class="container mx-auto px-6">
+                <h2 class="text-3xl md:text-4xl font-bold text-center mb-4">Your New Year's Day Plan</h2>
+                <p class="text-center text-lg text-gray-600 max-w-3xl mx-auto mb-12">New Year's Day is the busiest time in Milford Sound. An early start from Te Anau is essential to beat the crowds and enjoy a stress-free day. Here’s a recommended timeline.</p>
+
+                <div class="max-w-4xl mx-auto">
+                    <div class="relative">
+                        <div class="hidden md:block absolute top-0 left-1/2 w-0.5 h-full bg-[#D1C7BC]"></div>
+                        <div class="relative mb-8 md:mb-12">
+                            <div class="flex items-center md:justify-end md:pr-16">
+                                <div class="w-full md:w-5/12 p-6 bg-[#F8F5F2] rounded-lg shadow-md">
+                                    <h3 class="font-bold text-xl mb-2 text-[#A47551]">Depart Te Anau</h3>
+                                    <p class="text-gray-600">Aim to leave no later than 6:30 AM. This gives you a crucial head start on traffic and bus tours.</p>
+                                </div>
+                            </div>
+                            <div class="hidden md:flex absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-[#A47551] items-center justify-center text-white font-bold">1</div>
+                        </div>
+                        
+                        <div class="relative mb-8 md:mb-12">
+                            <div class="flex items-center md:justify-start md:pl-16">
+                                <div class="w-full md:w-5/12 p-6 bg-[#F8F5F2] rounded-lg shadow-md">
+                                    <h3 class="font-bold text-xl mb-2 text-[#A47551]">Scenic Drive & Arrival</h3>
+                                    <p class="text-gray-600">The 120km drive takes ~2 hours minimum. With peak traffic, allow 2.5-3 hours. Drive direct and save the scenic stops for the return trip.</p>
+                                </div>
+                            </div>
+                            <div class="hidden md:flex absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-[#A47551] items-center justify-center text-white font-bold">2</div>
+                        </div>
+
+                        <div class="relative mb-8 md:mb-12">
+                            <div class="flex items-center md:justify-end md:pr-16">
+                                <div class="w-full md:w-5/12 p-6 bg-[#F8F5F2] rounded-lg shadow-md">
+                                    <h3 class="font-bold text-xl mb-2 text-[#A47551]">Parking & Terminal</h3>
+                                    <p class="text-gray-600">Arrive in Milford by 9:30 AM. Allocate 30 mins to find a paid parking spot and walk to the terminal. It will be busy.</p>
+                                </div>
+                            </div>
+                             <div class="hidden md:flex absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-[#A47551] items-center justify-center text-white font-bold">3</div>
+                        </div>
+
+                        <div class="relative">
+                            <div class="flex items-center md:justify-start md:pl-16">
+                                <div class="w-full md:w-5/12 p-6 bg-[#F8F5F2] rounded-lg shadow-md">
+                                    <h3 class="font-bold text-xl mb-2 text-[#A47551]">Cruise Check-in</h3>
+                                    <p class="text-gray-600">Check in 20-30 minutes before your cruise. This makes you ready for a ~10:30 AM departure, ahead of the main rush.</p>
+                                </div>
+                            </div>
+                             <div class="hidden md:flex absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-[#A47551] items-center justify-center text-white font-bold">4</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="compare" class="py-16 md:py-24">
+            <div class="container mx-auto px-6">
+                <h2 class="text-3xl md:text-4xl font-bold text-center mb-4">Find Your Cruise Vibe</h2>
+                <p class="text-center text-lg text-gray-600 max-w-3xl mx-auto mb-12">Use these filters to find the perfect cruise for your group. The options below will update automatically based on your selections.</p>
+                
+                <div id="filters" class="flex flex-wrap justify-center gap-4 md:gap-8 mb-12">
+                    <div>
+                        <h4 class="font-semibold text-center mb-2">Group Vibe</h4>
+                        <div class="flex space-x-2 rounded-lg p-1 bg-gray-200">
+                           <button data-filter="vibe" data-value="intimate" class="filter-btn px-4 py-2 rounded-md w-full text-sm font-medium">Intimate & Quiet</button>
+                           <button data-filter="vibe" data-value="spacious" class="filter-btn px-4 py-2 rounded-md w-full text-sm font-medium">Social & Spacious</button>
+                        </div>
+                    </div>
+                     <div>
+                        <h4 class="font-semibold text-center mb-2">Main Priority</h4>
+                        <div class="flex space-x-2 rounded-lg p-1 bg-gray-200">
+                           <button data-filter="priority" data-value="nature" class="filter-btn px-4 py-2 rounded-md w-full text-sm font-medium">Up-close Nature</button>
+                           <button data-filter="priority" data-value="comfort" class="filter-btn px-4 py-2 rounded-md w-full text-sm font-medium">Onboard Comfort</button>
+                        </div>
+                    </div>
+                     <div>
+                        <h4 class="font-semibold text-center mb-2">Budget</h4>
+                        <div class="flex space-x-2 rounded-lg p-1 bg-gray-200">
+                           <button data-filter="budget" data-value="value" class="filter-btn px-4 py-2 rounded-md w-full text-sm font-medium">Value</button>
+                           <button data-filter="budget" data-value="premium" class="filter-btn px-4 py-2 rounded-md w-full text-sm font-medium">Premium</button>
+                           <button data-filter="budget" data-value="luxury" class="filter-btn px-4 py-2 rounded-md w-full text-sm font-medium">Luxury</button>
+                        </div>
+                    </div>
+                     <div>
+                        <h4 class="font-semibold text-center mb-2">&nbsp;</h4>
+                        <button id="clear-filters" class="w-full px-4 py-2 rounded-md font-medium bg-gray-600 text-white hover:bg-gray-700 transition">Clear Filters</button>
+                    </div>
+                </div>
+
+                <div id="cruise-grid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                </div>
+                 <p id="no-results" class="text-center text-lg text-gray-500 py-12 hidden">No cruises match your selected filters. Try clearing them to see all options.</p>
+            </div>
+        </section>
+
+        <section id="chart-section" class="py-16 md:py-24 bg-white">
+            <div class="container mx-auto px-6">
+                <h2 class="text-3xl md:text-4xl font-bold text-center mb-4">Visual Comparison</h2>
+                <p class="text-center text-lg text-gray-600 max-w-3xl mx-auto mb-8">Compare your filtered options at a glance. Use the dropdown to switch between price and cruise duration.</p>
+                <div class="text-center mb-8">
+                     <select id="chart-metric-selector" class="p-2 border rounded-md bg-white shadow-sm">
+                        <option value="price" selected>Price (NZD)</option>
+                        <option value="duration">Duration (minutes)</option>
+                    </select>
+                </div>
+                <div class="chart-container">
+                    <canvas id="cruise-chart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <section id="checklist" class="py-16 md:py-24">
+            <div class="container mx-auto px-6">
+                <h2 class="text-3xl md:text-4xl font-bold text-center mb-12">Final Checklist & Key Advice</h2>
+                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8 text-center">
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <div class="text-4xl mb-4 text-[#A47551]">🎟️</div>
+                        <h3 class="font-bold text-xl mb-2">Book Immediately</h3>
+                        <p class="text-gray-600">New Year's Day is peak season. Cruises sell out fast. Book your chosen option as soon as you decide.</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <div class="text-4xl mb-4 text-[#A47551]">🧥</div>
+                        <h3 class="font-bold text-xl mb-2">Pack for Four Seasons</h3>
+                        <p class="text-gray-600">Bring waterproof jackets, warm layers, sunscreen, and insect repellent. The weather is famously unpredictable.</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <div class="text-4xl mb-4 text-[#A47551]">🚗</div>
+                        <h3 class="font-bold text-xl mb-2">Check the Road Status</h3>
+                        <p class="text-gray-600">Before leaving Te Anau, check the NZTA website for any alerts or closures on the Milford Road (SH 94).</p>
+                    </div>
+                     <div class="bg-white p-6 rounded-lg shadow-md">
+                        <div class="text-4xl mb-4 text-[#A47551]">🔄</div>
+                        <h3 class="font-bold text-xl mb-2">Confirm Cancellation Policy</h3>
+                        <p class="text-gray-600">Check the operator's policy. Most offer flexibility with 24-48 hours' notice, which is vital for this time of year.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-[#EAE4DD] py-8">
+        <div class="container mx-auto px-6 text-center text-gray-600">
+            <p>This interactive planner was generated to help with your trip decisions.</p>
+            <p>&copy; 2025 Milford Sound Planner. All data sourced from provided report.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const cruiseData = [
+                {
+                    id: 'cruise-milford',
+                    name: 'Cruise Milford',
+                    title: 'Boutique Small Boat Cruise',
+                    price: 169,
+                    duration: 105,
+                    tags: { vibe: 'intimate', priority: 'nature', budget: 'premium' },
+                    bestFor: 'The Intimate Choice',
+                    pros: ['Most intimate & uncrowded (50% capacity)', 'Highly rated customer service', 'Gets closest to waterfalls/wildlife', 'Allows own food/drinks'],
+                    cons: ['Smaller boat might feel less stable', 'Limited onboard food/bar options'],
+                    description: "Ideal for an adult group seeking a personal experience. Their unique policy of limiting passenger numbers ensures an intimate atmosphere away from the crowds."
+                },
+                {
+                    id: 'realnz-business',
+                    name: 'RealNZ',
+                    title: 'Milford Sound Business Class',
+                    price: 699,
+                    duration: 135,
+                    tags: { vibe: 'intimate', priority: 'comfort', budget: 'luxury' },
+                    bestFor: 'The Premium Experience',
+                    pros: ['Truly luxurious and high-end', 'Gourmet food & drinks included', 'Longer cruise duration', 'Reputable company with expert guides'],
+                    cons: ['Significantly higher price point'],
+                    description: "For a special New Year's celebration. This is a premium experience with luxurious touches like champagne and a 6-course small plate menu on a limited-guest vessel."
+                },
+                {
+                    id: 'southern-discoveries',
+                    name: 'Southern Discoveries',
+                    title: 'Nature Cruise',
+                    price: 139,
+                    duration: 112,
+                    tags: { vibe: 'spacious', priority: 'nature', budget: 'value' },
+                    bestFor: 'Nature & Value Choice',
+                    pros: ['Excellent value for money', 'Strong focus on wildlife/nature commentary', 'Reputable and experienced operator', 'Option for onboard buffet lunch'],
+                    cons: ['Larger boat, potentially more crowded', 'May not get as close as smallest boats'],
+                    description: "Offers a robust, nature-focused experience at a great price. Known for getting close to Stirling Falls and featuring passionate guides."
+                },
+                 {
+                    id: 'mitre-peak',
+                    name: 'Mitre Peak Cruises',
+                    title: 'Small Boat Scenic Cruise',
+                    price: 155,
+                    duration: 120,
+                    tags: { vibe: 'intimate', priority: 'nature', budget: 'premium' },
+                    bestFor: 'Close-Up Views',
+                    pros: ['Small vessel gets very close to features', 'Longer 2-hour duration', 'Passes St Anne\'s lighthouse', 'Max 75 passengers for an uncrowded feel'],
+                    cons: ['Fewer departures than some larger operators', 'Basic complimentary amenities'],
+                    description: "Specializes in an intimate experience on smaller launches, allowing them to navigate closer to the fiord's features than larger boats for the full two hours."
+                },
+                {
+                    id: 'realnz-spacious',
+                    name: 'RealNZ',
+                    title: 'Sovereign & Monarch Cruise',
+                    price: 145,
+                    duration: 100,
+                    tags: { vibe: 'spacious', priority: 'comfort', budget: 'value' },
+                    bestFor: 'Spacious Comfort',
+                    pros: ['Very spacious vessels with great top decks', 'Stable ride, good for motion sickness', 'Onboard cafe and buffet lunch options', 'Frequent departure times'],
+                    cons: ['Can be very crowded (up to 280 guests)', 'Does not have a dedicated nature guide', 'Larger size limits proximity to some features'],
+                    description: "RealNZ's most spacious vessels are ideal for those who prioritize comfort, stability, and onboard amenities like a cafe. A good option for a social atmosphere."
+                }
+            ];
+
+            const grid = document.getElementById('cruise-grid');
+            const noResults = document.getElementById('no-results');
+            const filters = {};
+
+            async function generatePostCruiseSuggestions(cruiseName, cruiseVibe, targetElement) {
+                targetElement.innerHTML = '<div class="flex items-center justify-center p-4"><div class="loading-spinner"></div><span class="ml-2 text-gray-500">Generating suggestions...</span></div>';
+
+                const prompt = `Given the user is planning a New Year's Day trip to Milford Sound, staying in Te Anau, and has selected the '${cruiseName}' cruise (a ${cruiseVibe} vibe), suggest 2-3 brief post-cruise activities or points of interest within Milford Sound or on the drive back towards Te Anau. Focus on relaxation, scenic beauty, or unique experiences that align with the cruise vibe. Keep it concise (max 100 words).`;
+
+                let chatHistory = [];
+                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+                const payload = { contents: chatHistory };
+                const apiKey = "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const result = await response.json();
+                    if (result.candidates && result.candidates.length > 0 &&
+                        result.candidates[0].content && result.candidates[0].content.parts &&
+                        result.candidates[0].content.parts.length > 0) {
+                        const text = result.candidates[0].content.parts[0].text;
+                        targetElement.innerHTML = `<div class="mt-4 p-3 bg-gray-100 rounded-md text-gray-700 text-sm border border-gray-200"><strong>✨ Post-Cruise Ideas:</strong><br>${text}</div>`;
+                    } else {
+                        targetElement.innerHTML = `<div class="mt-4 p-3 bg-red-100 rounded-md text-red-700 text-sm">Could not generate suggestions. Please try again.</div>`;
+                    }
+                } catch (error) {
+                    console.error("Error calling Gemini API:", error);
+                    targetElement.innerHTML = `<div class="mt-4 p-3 bg-red-100 rounded-md text-red-700 text-sm">Error generating suggestions. Please check your network or try again.</div>`;
+                }
+            }
+
+
+            function renderCards(data) {
+                grid.innerHTML = '';
+                if (data.length === 0) {
+                    noResults.classList.remove('hidden');
+                    return;
+                }
+                noResults.classList.add('hidden');
+                
+                data.forEach(cruise => {
+                    const card = document.createElement('div');
+                    card.className = 'card bg-white rounded-lg shadow-lg overflow-hidden cursor-pointer';
+                    card.dataset.id = cruise.id;
+                    card.innerHTML = `
+                        <div class="p-6">
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <p class="text-sm font-semibold text-[#A47551]">${cruise.bestFor.toUpperCase()}</p>
+                                    <h3 class="text-2xl font-bold">${cruise.name}</h3>
+                                    <p class="text-md text-gray-500">${cruise.title}</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-2xl font-bold text-[#3D352F]">$${cruise.price}</p>
+                                    <p class="text-sm text-gray-500">per adult</p>
+                                </div>
+                            </div>
+                            <div class="details-section" id="details-${cruise.id}">
+                                <p class="text-gray-600 mt-4 mb-4">${cruise.description}</p>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                    <div>
+                                        <h4 class="font-semibold mb-1">Pros for Your Group:</h4>
+                                        <ul class="list-disc list-inside text-gray-600 space-y-1">
+                                            ${cruise.pros.map(p => `<li>${p}</li>`).join('')}
+                                        </ul>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-semibold mb-1">Things to Consider:</h4>
+                                        <ul class="list-disc list-inside text-gray-600 space-y-1">
+                                            ${cruise.cons.map(c => `<li>${c}</li>`).join('')}
+                                        </ul>
+                                    </div>
+                                </div>
+                                <button class="mt-6 w-full bg-[#A47551] text-white py-2 px-4 rounded-md hover:bg-[#8C6239] transition text-sm font-medium" data-action="suggest-activities" data-cruise-id="${cruise.id}">
+                                    ✨ Suggest Post-Cruise Activities
+                                </button>
+                                <div id="suggestions-${cruise.id}" class="mt-4"></div>
+                            </div>
+                        </div>
+                        <div class="px-6 py-3 bg-gray-50 text-right text-sm font-medium text-[#A47551]">
+                            Click to see details
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                });
+            }
+            
+            let chart;
+            const ctx = document.getElementById('cruise-chart').getContext('2d');
+
+            function initializeChart(data, metric) {
+                const labels = data.map(c => c.name);
+                const values = data.map(c => c[metric]);
+                const metricLabel = metric === 'price' ? 'Price (NZD)' : 'Duration (minutes)';
+
+                if (chart) {
+                    chart.destroy();
+                }
+
+                chart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: metricLabel,
+                            data: values,
+                            backgroundColor: '#A47551',
+                            borderColor: '#8C6239',
+                            borderWidth: 1,
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: '#EAE4DD' }
+                            },
+                            x: {
+                                grid: { display: false }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.parsed.y !== null) {
+                                            if (metric === 'price') {
+                                                label += new Intl.NumberFormat('en-NZ', { style: 'currency', currency: 'NZD' }).format(context.parsed.y);
+                                            } else {
+                                                label += `${context.parsed.y} mins`;
+                                            }
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            function updateChart(data, metric) {
+                if (!chart) {
+                    initializeChart(data, metric);
+                    return;
+                }
+                chart.data.labels = data.map(c => `${c.name} - ${c.title.substring(0, 15)}...`);
+                chart.data.datasets[0].data = data.map(c => c[metric]);
+                chart.data.datasets[0].label = metric === 'price' ? 'Price (NZD)' : 'Duration (minutes)';
+                chart.update();
+            }
+
+            function filterAndRender() {
+                const filteredData = cruiseData.filter(cruise => {
+                    return Object.entries(filters).every(([key, value]) => {
+                        return cruise.tags[key] === value;
+                    });
+                });
+                renderCards(filteredData);
+                const selectedMetric = document.getElementById('chart-metric-selector').value;
+                updateChart(filteredData.length > 0 ? filteredData : cruiseData, selectedMetric);
+            }
+            
+            document.getElementById('filters').addEventListener('click', e => {
+                if (e.target.matches('button[data-filter]')) {
+                    const filter = e.target.dataset.filter;
+                    const value = e.target.dataset.value;
+                    
+                    if (filters[filter] === value) {
+                        delete filters[filter];
+                        e.target.classList.remove('active');
+                    } else {
+                        filters[filter] = value;
+                        const siblings = e.target.parentElement.querySelectorAll('button');
+                        siblings.forEach(btn => b
