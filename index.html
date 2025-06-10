@@ -259,7 +259,7 @@
                     bestFor: 'The Intimate Choice',
                     pros: ['Most intimate & uncrowded (50% capacity)', 'Highly rated customer service', 'Gets closest to waterfalls/wildlife', 'Allows own food/drinks'],
                     cons: ['Smaller boat might feel less stable', 'Limited onboard food/bar options'],
-                    description: "Ideal for an adult group seeking a personal experience. Their unique policy of limiting passenger numbers ensures an intimate atmosphere away from the crowds."
+                    bookingLink: 'https://www.cruisemilford.co.nz/book-now/'
                 },
                 {
                     id: 'realnz-business',
@@ -271,7 +271,7 @@
                     bestFor: 'The Premium Experience',
                     pros: ['Truly luxurious and high-end', 'Gourmet food & drinks included', 'Longer cruise duration', 'Reputable company with expert guides'],
                     cons: ['Significantly higher price point'],
-                    description: "For a special New Year's celebration. This is a premium experience with luxurious touches like champagne and a 6-course small plate menu on a limited-guest vessel."
+                    bookingLink: 'https://www.realnz.com/en/booking/milford-sound/business-class-cruise/'
                 },
                 {
                     id: 'southern-discoveries',
@@ -283,7 +283,7 @@
                     bestFor: 'Nature & Value Choice',
                     pros: ['Excellent value for money', 'Strong focus on wildlife/nature commentary', 'Reputable and experienced operator', 'Option for onboard buffet lunch'],
                     cons: ['Larger boat, potentially more crowded', 'May not get as close as smallest boats'],
-                    description: "Offers a robust, nature-focused experience at a great price. Known for getting close to Stirling Falls and featuring passionate guides."
+                    bookingLink: 'https://www.southerndiscoveries.co.nz/milford-sound/nature-cruise/'
                 },
                  {
                     id: 'mitre-peak',
@@ -295,7 +295,7 @@
                     bestFor: 'Close-Up Views',
                     pros: ['Small vessel gets very close to features', 'Longer 2-hour duration', 'Passes St Anne\'s lighthouse', 'Max 75 passengers for an uncrowded feel'],
                     cons: ['Fewer departures than some larger operators', 'Basic complimentary amenities'],
-                    description: "Specializes in an intimate experience on smaller launches, allowing them to navigate closer to the fiord's features than larger boats for the full two hours."
+                    bookingLink: 'https://www.mitrepeak.com/book-now/'
                 },
                 {
                     id: 'realnz-spacious',
@@ -307,7 +307,7 @@
                     bestFor: 'Spacious Comfort',
                     pros: ['Very spacious vessels with great top decks', 'Stable ride, good for motion sickness', 'Onboard cafe and buffet lunch options', 'Frequent departure times'],
                     cons: ['Can be very crowded (up to 280 guests)', 'Does not have a dedicated nature guide', 'Larger size limits proximity to some features'],
-                    description: "RealNZ's most spacious vessels are ideal for those who prioritize comfort, stability, and onboard amenities like a cafe. A good option for a social atmosphere."
+                    bookingLink: 'https://www.realnz.com/en/booking/milford-sound/day-cruise/'
                 }
             ];
 
@@ -315,38 +315,7 @@
             const noResults = document.getElementById('no-results');
             const filters = {};
 
-            async function generatePostCruiseSuggestions(cruiseName, cruiseVibe, targetElement) {
-                targetElement.innerHTML = '<div class="flex items-center justify-center p-4"><div class="loading-spinner"></div><span class="ml-2 text-gray-500">Generating suggestions...</span></div>';
-
-                const prompt = `Given the user is planning a New Year's Day trip to Milford Sound, staying in Te Anau, and has selected the '${cruiseName}' cruise (a ${cruiseVibe} vibe), suggest 2-3 brief post-cruise activities or points of interest within Milford Sound or on the drive back towards Te Anau. Focus on relaxation, scenic beauty, or unique experiences that align with the cruise vibe. Keep it concise (max 100 words).`;
-
-                let chatHistory = [];
-                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
-                const payload = { contents: chatHistory };
-                const apiKey = "";
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-
-                try {
-                    const response = await fetch(apiUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-                    const result = await response.json();
-                    if (result.candidates && result.candidates.length > 0 &&
-                        result.candidates[0].content && result.candidates[0].content.parts &&
-                        result.candidates[0].content.parts.length > 0) {
-                        const text = result.candidates[0].content.parts[0].text;
-                        targetElement.innerHTML = `<div class="mt-4 p-3 bg-gray-100 rounded-md text-gray-700 text-sm border border-gray-200"><strong>✨ Post-Cruise Ideas:</strong><br>${text}</div>`;
-                    } else {
-                        targetElement.innerHTML = `<div class="mt-4 p-3 bg-red-100 rounded-md text-red-700 text-sm">Could not generate suggestions. Please try again.</div>`;
-                    }
-                } catch (error) {
-                    console.error("Error calling Gemini API:", error);
-                    targetElement.innerHTML = `<div class="mt-4 p-3 bg-red-100 rounded-md text-red-700 text-sm">Error generating suggestions. Please check your network or try again.</div>`;
-                }
-            }
-
+            // Removed generatePostCruiseSuggestions function as it's no longer needed.
 
             function renderCards(data) {
                 grid.innerHTML = '';
@@ -389,10 +358,10 @@
                                         </ul>
                                     </div>
                                 </div>
-                                <button class="mt-6 w-full bg-[#A47551] text-white py-2 px-4 rounded-md hover:bg-[#8C6239] transition text-sm font-medium" data-action="suggest-activities" data-cruise-id="${cruise.id}">
-                                    ✨ Suggest Post-Cruise Activities
-                                </button>
-                                <div id="suggestions-${cruise.id}" class="mt-4"></div>
+                                <a href="${cruise.bookingLink}" target="_blank" rel="noopener noreferrer" class="mt-6 w-full flex justify-center items-center bg-[#A47551] text-white py-2 px-4 rounded-md hover:bg-[#8C6239] transition text-sm font-medium">
+                                    Book Your Cruise Now
+                                </a>
+                                <!-- Removed suggestions-${cruise.id} div as it's no longer needed -->
                             </div>
                         </div>
                         <div class="px-6 py-3 bg-gray-50 text-right text-sm font-medium text-[#A47551]">
@@ -529,16 +498,13 @@
                 if(card) {
                     const detailsId = `details-${card.dataset.id}`;
                     const detailsElement = document.getElementById(detailsId);
+                    // Toggle the open class for details section
                     detailsElement.classList.toggle('open');
 
-                    // If a "Suggest Activities" button is clicked
-                    if (e.target.dataset.action === 'suggest-activities') {
-                        const cruiseId = e.target.dataset.cruiseId;
-                        const selectedCruise = cruiseData.find(c => c.id === cruiseId);
-                        if (selectedCruise) {
-                            const suggestionsDiv = document.getElementById(`suggestions-${cruiseId}`);
-                            generatePostCruiseSuggestions(selectedCruise.name, selectedCruise.tags.vibe, suggestionsDiv);
-                        }
+                    // If the click was on the card itself, not the link, prevent navigation
+                    // and allow the toggle. If it was specifically the link, let it navigate.
+                    if (e.target.tagName !== 'A') {
+                        e.preventDefault(); 
                     }
                 }
             });
